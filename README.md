@@ -35,7 +35,7 @@ gcloud functions deploy get-cep-fn \
 yarn start
 ```
 
-##### Deploy na cloud
+- Deploy na cloud
 
 ```bash
 yarn deploy
