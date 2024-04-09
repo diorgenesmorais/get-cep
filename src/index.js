@@ -19,7 +19,7 @@ function generatePayload(req) {
   log('Content of body', body);
 
   if(req.headers['user-agent'] === 'Google-Dialogflow') {
-    payload['cep'] = body.sessionInfo.parameters['infoCep'];
+    payload['cep'] = body.sessionInfo.parameters['infocep'];
     return payload;
   }
 
