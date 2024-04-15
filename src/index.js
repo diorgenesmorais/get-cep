@@ -21,8 +21,9 @@ function generatePayload(req) {
 
   if(req.headers['user-agent'] === 'Google-Dialogflow') {
     payload['cep'] = body.sessionInfo.parameters['infocep'];
-    if(body.messages) {
-      payload['messages'] = JSON.parse(body.messages);
+    const messages = body.sessionInfo.parameters['messages'];
+    if(messages) {
+      payload['messages'] = JSON.parse(messages);
     } else {
       payload['messages'] = [];
     }
@@ -53,7 +54,7 @@ function getResponseData(resText) {
     sessionInfo: {
       parameters: {
         api_response: resText,
-        messages: JSON.stringify([...payload['messages']])
+        messages: JSON.stringify(payload['messages'])
       }
     }
   }
