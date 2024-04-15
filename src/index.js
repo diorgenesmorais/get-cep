@@ -1,5 +1,6 @@
 const ff = require('@google-cloud/functions-framework');
 const buscaCep = require('busca-cep');
+let payload = {};
 
 function log(message, content) {
 
@@ -14,12 +15,14 @@ function log(message, content) {
 
 function generatePayload(req) {
   const body = req.body;
-  const payload = {};
+  payload = {};
 
   log('Content of body', body);
 
   if(req.headers['user-agent'] === 'Google-Dialogflow') {
     payload['cep'] = body.sessionInfo.parameters['infocep'];
+    payload['messages'] = body.messages || [];
+    saveMessage(`O usuário consultou o ${payload['cep']}`, 'user');
     return payload;
   }
 
@@ -29,6 +32,27 @@ function generatePayload(req) {
 function getAddress(address) {
   const {logradouro, bairro, localidade, uf, cep} = address;
   return `O CEP ${cep} é referente ao endereço: ${logradouro}, ${bairro}, ${localidade} - ${uf}`;
+}
+
+function getResponseData(resText) {
+  saveMessage(resText, 'assistant');
+  return {
+    fulfillment_response: {
+      messages: [
+        {
+          text: {
+            text: [resText]
+          }
+        }
+      ]
+    },
+    sessionInfo: {
+      parameters: {
+        api_response: resText
+      }
+    },
+    messages: [...payload['messages']]
+  }
 }
 
 ff.http('chat', (req, res) => {
@@ -43,28 +67,13 @@ ff.http('chat', (req, res) => {
 
   const { cep } = generatePayload(req);
   if (!cep) {
-    res.status(400).send('Informe o CEP no payload');
+    res.status(400).json(getResponseData('Informe o CEP no payload'));
     return;
   }
   buscaCep(cep, {sync: false, timeout: 1000})
     .then((address) => {
       const resText = getAddress(address);
-      const data = {
-        fulfillment_response: {
-          messages: [
-            {
-              text: {
-                text: [resText]
-              }
-            }
-          ]
-        },
-        sessionInfo: {
-          parameters: {
-            api_response: resText
-          }
-        }
-      }
+      const data = getResponseData(resText);
       res.status(200).json(data);
     })
     .catch((error) => {
@@ -72,3 +81,29 @@ ff.http('chat', (req, res) => {
       res.status(500).send('Erro de execução');
     });
 });
+
+/**
+ * Cria um objeto do contexto de mensagem
+ * 
+ * @param {string} content 
+ * @param {string} role 
+ * @returns objeto no padrão do contexto.
+ */
+function setMessage(content, role) {
+  return {
+    content,
+    role
+  }
+}
+
+/**
+ * Salva a mensagem na lista de mensagens
+ * 
+ * @param {string} message 
+ * @param {string} role 
+ */
+function saveMessage(message, role) {
+  const list = payload['messages'];
+
+  payload['messages'] = [...list, setMessage(message, role)];
+}
