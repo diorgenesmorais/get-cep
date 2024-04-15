@@ -74,6 +74,7 @@ ff.http('chat', (req, res) => {
     .then((address) => {
       const resText = getAddress(address);
       const data = getResponseData(resText);
+      log('Response API', data);
       res.status(200).json(data);
     })
     .catch((error) => {
