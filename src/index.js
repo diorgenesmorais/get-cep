@@ -48,10 +48,10 @@ function getResponseData(resText) {
     },
     sessionInfo: {
       parameters: {
-        api_response: resText
+        api_response: resText,
+        messages: [...payload['messages']]
       }
-    },
-    messages: [...payload['messages']]
+    }
   }
 }
 
